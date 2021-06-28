@@ -191,6 +191,19 @@ elif choice == '2':  # Intermediate shapefile setup
         ap_lyr.SetFeature(ap_feat)
     ap_ds.Destroy()
 
+    # Poles
+    pole_ds = driver.Open(poles_path, 1)
+    pole_lyr = pole_ds.GetLayer()
+
+    existing_def = ogr.FieldDefn("EXISTING", ogr.OFTString)
+    existing_def.SetWidth(254)
+    pole_lyr.CreateField(existing_def)
+
+    for pole_feat in pole_lyr:
+        pole_feat.SetField("EXISTING", "T")
+        pole_lyr.SetFeature(pole_feat)
+    pole_ds.Destroy()
+
     # Copy to the comsof workspace directory
     for root, dirnames, filenames in os.walk(src_shp_path):
         for file in filenames:
