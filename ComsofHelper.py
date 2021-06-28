@@ -7,6 +7,8 @@ from datetime import datetime
 import shutil
 import zipfile
 
+import shapefile
+
 # Global variables
 
 """
@@ -154,6 +156,11 @@ elif choice == '2':  # Intermediate shapefile setup
                 shutil.copy(original_path, new_path)
 
     # TODO: Add attrs to shapefiles
+    demand_points_shp = os.path.join(workspace_input_path, "IN_DemandPoints.shp")
+    access_structs_shp = os.path.join(workspace_input_path, "IN_AccessStructures.shp")
+    poles_shp = os.path.join(workspace_input_path, "IN_Poles.shp")
+    aerial_cons_shp = os.path.join(workspace_input_path, "IN_AerialConnections.shp")
+    fdc_shp = os.path.join(workspace_input_path, "IN_ForcedDropClusters.shp")
 
 elif choice == '3':  # Create deliverable package
     copied_counter = 0
