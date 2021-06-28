@@ -204,6 +204,30 @@ elif choice == '2':  # Intermediate shapefile setup
         pole_lyr.SetFeature(pole_feat)
     pole_ds.Destroy()
 
+    # Aerial connections
+    aerial_ds = driver.Open(aerials_path, 1)
+    aerial_lyr = aerial_ds.GetLayer()
+
+    locked_def = ogr.FieldDefn("LOCKED", ogr.OFTString)
+    locked_def.SetWidth(254)
+    aerial_lyr.CreateField(locked_def)
+
+    for aerial_feat in aerial_lyr:
+        aerial_feat.SetField("LOCKED", "T")
+        aerial_lyr.SetFeature(aerial_feat)
+    aerial_ds.Destroy()
+
+    # FDT Boundaries
+    fdt_ds = driver.Open(fdc_path, 1)
+    fdt_lyr = fdt_ds.GetLayer()
+
+    fdt_lyr.CreateField(locked_def)
+
+    for fdt_feat in fdt_lyr:
+        fdt_feat.SetField("LOCKED", "T")
+        fdt_lyr.SetFeature(fdt_feat)
+    fdt_feat.Destroy()
+
     # Copy to the comsof workspace directory
     for root, dirnames, filenames in os.walk(src_shp_path):
         for file in filenames:
