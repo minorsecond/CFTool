@@ -34,19 +34,25 @@ DELIVERABLE_SHAPEFILES = ("OUT_AccessStructures",
                           "OUT_DropClusters",
                           "OUT_FeederCables")
 
+INTERMEDIATE_SHAPEFILES = ("span_length",
+                           "fdt_boundary")
+
 # Get the current date in YYYYMMDD format, for timestamping output directory names
 now = datetime.now()
 date = now.strftime("%Y%m%d")
 
 choice = input("1 - Set up working environment\n"
-               "2 - Create deliverable package\n"
+               "2 - Intermediate Comsof Shapefile Setup\n"
+               "3 - Create deliverable package\n"
                "Q/q - Quit\n"
                "------------------------------\n-> ")
 
-while choice.lower() != 'q' and (not choice.isnumeric() or int(choice) not in (1, 2)):
+while choice.lower() != 'q' and (not choice.isnumeric() or int(choice) not in (1, 2, 3)):
     choice = input("1 - Set up working environment\n"
-                   "2 - Create deliverable package\n"
-                   "Q/q - Quit\n")
+                   "2 - Intermediate Comsof Shapefile Setup\n"
+                   "3 - Create deliverable package\n"
+                   "Q/q - Quit\n"
+                   "------------------------------\n-> ")
 
 if choice.lower() == 'q':
     sys.exit()
@@ -103,7 +109,53 @@ if choice == '1':  # Set up working environment
                 # Add _ to end of zip file to flag it as having been processed
                 os.rename(source_path, os.path.join(download_root, os.path.splitext(downloaded_file)[0] + '_.zip'))
 
-elif choice == '2':  # Create deliverable package
+elif choice == '2':  # Intermediate shapefile setup
+    src_shp_path = None
+    workspace_path = None
+
+    # Get src path
+    for root, dirnames, filenames in os.walk(DOCUMENTS):
+        for dir in dirnames:
+            dir_path = os.path.join(root, dir)
+            if job_number in dir_path and 'reprojected' in dir_path.lower():
+                src_shp_path = dir_path
+
+    # Get workspace path
+    for root, dirnames, filenames in os.walk(WORKSPACES):
+        for dir in dirnames:
+            dir_path = os.path.join(root, dir)
+            if job_number in dir_path and "input" not in dir_path.lower() and "saved states" not in dir_path.lower() \
+                    and "output" not in dir_path.lower():
+                workspace_path = dir_path
+
+    if src_shp_path is None:
+        print("Could not find source shapefile path. Exiting")
+        sys.exit()
+    elif workspace_path is None:
+        print("Could not find workspace path. Exiting")
+        sys.exit()
+
+    workspace_input_path = os.path.join(workspace_path, "input")  # Span length goes here
+    workspace_calc_input_path = os.path.join(workspace_input_path, "CalculationInput")  # FDT boundary goes here
+
+    for root, dirnames, filenames in os.walk(src_shp_path):
+        for file in filenames:
+            original_path = os.path.join(root, file)
+            src_filename = os.path.splitext(file)[0].lower()
+            src_ext = os.path.splitext(file)[1].lower()
+            if src_filename == "span_length":
+                new_filename = f"IN_AerialConnections" + src_ext
+                new_path = os.path.join(workspace_input_path, new_filename)
+                shutil.copy(original_path, new_path)
+
+            if src_filename == "fdt_boundary":
+                new_filename = f"IN_ForcedDropClusters" + src_ext
+                new_path = os.path.join(workspace_calc_input_path,  new_filename)
+                shutil.copy(original_path, new_path)
+
+    # TODO: Add attrs to shapefiles
+
+elif choice == '3':  # Create deliverable package
     copied_counter = 0
     input_path = input("Comsof workspace output path: ")
     state = input("State: ")
