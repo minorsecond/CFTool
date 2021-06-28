@@ -7,7 +7,8 @@ from datetime import datetime
 import shutil
 import zipfile
 
-import shapefile
+import osr
+from gdal import ogr
 
 # Global variables
 
@@ -119,7 +120,7 @@ elif choice == '2':  # Intermediate shapefile setup
     for root, dirnames, filenames in os.walk(DOCUMENTS):
         for dir in dirnames:
             dir_path = os.path.join(root, dir)
-            if job_number in dir_path and 'reprojected' in dir_path.lower():
+            if job_number in dir_path and 'reprojected' in dir_path.lower() and "ready" not in dir_path.lower():
                 src_shp_path = dir_path
 
     # Get workspace path
@@ -140,6 +141,45 @@ elif choice == '2':  # Intermediate shapefile setup
     workspace_input_path = os.path.join(workspace_path, "input")  # Span length goes here
     workspace_calc_input_path = os.path.join(workspace_input_path, "CalculationInput")  # FDT boundary goes here
 
+    # Read the shapefiles
+    driver = ogr.GetDriverByName("ESRI Shapefile")
+    ready_path = os.path.join(src_shp_path, "ready")
+    if not os.path.exists(ready_path):
+        os.makedirs(os.path.join(ready_path))
+
+    demand_points_path = os.path.join(src_shp_path, "addresses.dbf")
+    access_structs_path = os.path.join(src_shp_path, "access_point.dbf")
+    poles_path = os.path.join(src_shp_path, "pole.dbf")
+    aerials_path = os.path.join(src_shp_path, "span_length.dbf")
+    fdc_path = os.path.join(src_shp_path, "fdt_boundary.dbf")
+
+    dp_ds = driver.Open(demand_points_path, 1)
+    dp_lyr = dp_ds.GetLayer()
+
+    pon_homes_def = ogr.FieldDefn("PON_HOMES", ogr.OFTInteger)
+    streetname_def = ogr.FieldDefn("STREETNAME", ogr.OFTString)
+    streetname_def.SetWidth(254)
+    dp_lyr.CreateField(pon_homes_def)
+    dp_lyr.CreateField(streetname_def)
+
+    for feat in dp_lyr:
+        streetname = feat.GetField("street")
+
+        try:  # Handle blank streetnames
+            streetname = streetname.upper()
+        except AttributeError:
+            streetname = ''
+
+        feat.SetField("PON_HOMES", 1)
+        feat.SetField("STREETNAME", streetname)
+        dp_lyr.SetFeature(feat)
+    dp_ds.Destroy()
+
+    # Write shapefiles to ready path
+
+
+
+    # Copy to the comsof workspace directory
     for root, dirnames, filenames in os.walk(src_shp_path):
         for file in filenames:
             original_path = os.path.join(root, file)
@@ -155,12 +195,6 @@ elif choice == '2':  # Intermediate shapefile setup
                 new_path = os.path.join(workspace_calc_input_path,  new_filename)
                 shutil.copy(original_path, new_path)
 
-    # TODO: Add attrs to shapefiles
-    demand_points_shp = os.path.join(workspace_input_path, "IN_DemandPoints.shp")
-    access_structs_shp = os.path.join(workspace_input_path, "IN_AccessStructures.shp")
-    poles_shp = os.path.join(workspace_input_path, "IN_Poles.shp")
-    aerial_cons_shp = os.path.join(workspace_input_path, "IN_AerialConnections.shp")
-    fdc_shp = os.path.join(workspace_input_path, "IN_ForcedDropClusters.shp")
 
 elif choice == '3':  # Create deliverable package
     copied_counter = 0
