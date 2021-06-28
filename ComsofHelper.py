@@ -44,9 +44,9 @@ INTERMEDIATE_SHAPEFILES = ("span_length",
 now = datetime.now()
 date = now.strftime("%Y%m%d")
 
-choice = input("1 - Set up working environment\n"
-               "2 - Intermediate Comsof Shapefile Setup\n"
-               "3 - Create deliverable package\n"
+choice = input("1 - Set up working environment (After downloading data)\n"
+               "2 - Intermediate Comsof Shapefile Setup (After reprojecting data)\n"
+               "3 - Create deliverable package (After running Comsof FS)\n"
                "Q/q - Quit\n"
                "------------------------------\n-> ")
 
