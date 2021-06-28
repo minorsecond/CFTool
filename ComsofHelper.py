@@ -153,6 +153,7 @@ elif choice == '2':  # Intermediate shapefile setup
     aerials_path = os.path.join(src_shp_path, "span_length.dbf")
     fdc_path = os.path.join(src_shp_path, "fdt_boundary.dbf")
 
+    # Demand points / addresses
     dp_ds = driver.Open(demand_points_path, 1)
     dp_lyr = dp_ds.GetLayer()
 
@@ -175,9 +176,20 @@ elif choice == '2':  # Intermediate shapefile setup
         dp_lyr.SetFeature(feat)
     dp_ds.Destroy()
 
-    # Write shapefiles to ready path
+    # Access Points
+    ap_ds = driver.Open(access_structs_path, 1)
+    ap_lyr = ap_ds.GetLayer()
 
+    type_def = ogr.FieldDefn("TYPE", ogr.OFTString)
+    type_def.SetWidth(254)
+    ap_lyr.CreateField(type_def)
 
+    for ap_feat in ap_lyr:
+        type = ap_feat.GetField('structur_1')
+        type_string = f"HANDHOLE{{{type}}}"
+        ap_feat.SetField("TYPE", type_string)
+        ap_lyr.SetFeature(ap_feat)
+    ap_ds.Destroy()
 
     # Copy to the comsof workspace directory
     for root, dirnames, filenames in os.walk(src_shp_path):
