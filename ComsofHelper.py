@@ -226,8 +226,9 @@ elif choice == '2':  # Intermediate shapefile setup
     for fdt_feat in fdt_lyr:
         fdt_feat.SetField("LOCKED", "T")
         fdt_lyr.SetFeature(fdt_feat)
-    fdt_feat.Destroy()
+    fdt_lyr.Destroy()
 
+    """
     # Copy to the comsof workspace directory
     for root, dirnames, filenames in os.walk(src_shp_path):
         for file in filenames:
@@ -243,6 +244,8 @@ elif choice == '2':  # Intermediate shapefile setup
                 new_filename = f"IN_ForcedDropClusters" + src_ext
                 new_path = os.path.join(workspace_calc_input_path,  new_filename)
                 shutil.copy(original_path, new_path)
+                
+    """
 
 
 elif choice == '3':  # Create deliverable package
