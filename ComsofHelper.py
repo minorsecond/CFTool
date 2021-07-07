@@ -100,6 +100,7 @@ if choice == '1':  # Set up working environment
                 # the pre-QGIS ingestion shapefile path
                 for tmp_root, _, tmp_filenames in os.walk(tmp_path):
                     for shapefile_part in tmp_filenames:
+                        #TODO: Extract geopackage to shapefiles if present
                         dest_path = os.path.join(job_dir_path, shapefile_part)
                         file_path = os.path.join(tmp_root, shapefile_part)
                         shutil.copy(file_path, dest_path)
@@ -111,6 +112,7 @@ if choice == '1':  # Set up working environment
 
                 # Add _ to end of zip file to flag it as having been processed
                 os.rename(source_path, os.path.join(download_root, os.path.splitext(downloaded_file)[0] + '_.zip'))
+    print("Workspace created")
 
 elif choice == '2':  # Intermediate shapefile setup
     src_shp_path = None
@@ -134,12 +136,12 @@ elif choice == '2':  # Intermediate shapefile setup
     if src_shp_path is None:
         print("Could not find source shapefile path. Exiting")
         sys.exit()
-    elif workspace_path is None:
-        print("Could not find workspace path. Exiting")
-        sys.exit()
+    #elif workspace_path is None:
+    #    print("Could not find workspace path. Exiting")
+    #    sys.exit()
 
-    workspace_input_path = os.path.join(workspace_path, "input")  # Span length goes here
-    workspace_calc_input_path = os.path.join(workspace_input_path, "CalculationInput")  # FDT boundary goes here
+    #workspace_input_path = os.path.join(workspace_path, "input")  # Span length goes here
+    #workspace_calc_input_path = os.path.join(workspace_input_path, "CalculationInput")  # FDT boundary goes here
 
     # Read the shapefiles
     driver = ogr.GetDriverByName("ESRI Shapefile")
@@ -156,7 +158,6 @@ elif choice == '2':  # Intermediate shapefile setup
     # Demand points / addresses
     dp_ds = driver.Open(demand_points_path, 1)
     dp_lyr = dp_ds.GetLayer()
-
     pon_homes_def = ogr.FieldDefn("PON_HOMES", ogr.OFTInteger)
     streetname_def = ogr.FieldDefn("STREETNAME", ogr.OFTString)
     streetname_def.SetWidth(254)
@@ -164,9 +165,16 @@ elif choice == '2':  # Intermediate shapefile setup
     dp_lyr.CreateField(streetname_def)
 
     for feat in dp_lyr:
-        streetname = feat.GetField("street")
+        try:  # street attribute names may differ depending on market
+            streetname = feat.GetField("street")
+        except KeyError:
+            try:
+                streetname = feat.GetField("street_nam")
+            except KeyError:
+                print("Error: street attribute does not exist in address data")
+                sys.exit()
 
-        try:  # Handle blank streetnames
+        try:  # Convert to uppercase & handle blank streetnames
             streetname = streetname.upper()
         except AttributeError:
             streetname = ''
@@ -226,7 +234,7 @@ elif choice == '2':  # Intermediate shapefile setup
     for fdt_feat in fdt_lyr:
         fdt_feat.SetField("LOCKED", "T")
         fdt_lyr.SetFeature(fdt_feat)
-    fdt_lyr.Destroy()
+    fdt_ds.Destroy()
 
     """
     # Copy to the comsof workspace directory
