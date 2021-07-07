@@ -159,13 +159,31 @@ elif choice == '2':  # Intermediate shapefile setup
 
     pon_homes_def = ogr.FieldDefn("PON_HOMES", ogr.OFTInteger)
     streetname_def = ogr.FieldDefn("STREETNAME", ogr.OFTString)
+    inc_def = ogr.FieldDefn("INCLUDE", ogr.OFTString)
+    tmp_def = ogr.FieldDefn("tmp", ogr.OFTString)
     streetname_def.SetWidth(254)
     dp_lyr.CreateField(pon_homes_def)
     dp_lyr.CreateField(streetname_def)
 
-    for feat in dp_lyr:
-        streetname = feat.GetField("street")
+    # Get index of include field
+    field_index = None
+    lyr_def = dp_lyr.GetLayerDefn()
+    for n in range(lyr_def.GetFieldCount()):
+        field = lyr_def.GetFieldDefn(n)
+        field_name = field.name
+        if field_name == 'include':
+            field_index = n
 
+    # Create tmp field and copy contents of include into it before dropping the include field
+    dp_lyr.CreateField(tmp_def)
+    dp_lyr.CreateField(inc_def)
+    for feat in dp_lyr:
+        feat.SetField("tmp", feat.GetField("include"))
+    dp_lyr.DeleteField(field_index)
+
+    for feat in dp_lyr:
+        feat.SetField("INCLUDE", feat.GetField("tmp"))
+        streetname = feat.GetField("street")
         try:  # Handle blank streetnames
             streetname = streetname.upper()
         except AttributeError:
