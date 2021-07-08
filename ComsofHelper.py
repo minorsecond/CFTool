@@ -7,7 +7,6 @@ from datetime import datetime
 import shutil
 import zipfile
 
-import osr
 from gdal import ogr
 
 # Global variables
@@ -162,26 +161,32 @@ elif choice == '2':  # Intermediate shapefile setup
     inc_def = ogr.FieldDefn("INCLUDE", ogr.OFTString)
     tmp_def = ogr.FieldDefn("tmp", ogr.OFTString)
     streetname_def.SetWidth(254)
+    inc_def.SetWidth(254)
+    tmp_def.SetWidth(254)
     dp_lyr.CreateField(pon_homes_def)
     dp_lyr.CreateField(streetname_def)
 
     # Get index of include field
-    field_index = None
+    include_field_index = None
     lyr_def = dp_lyr.GetLayerDefn()
     for n in range(lyr_def.GetFieldCount()):
         field = lyr_def.GetFieldDefn(n)
         field_name = field.name
         if field_name == 'include':
-            field_index = n
+            include_field_index = n
 
     # Create tmp field and copy contents of include into it before dropping the include field
     dp_lyr.CreateField(tmp_def)
-    dp_lyr.CreateField(inc_def)
     for feat in dp_lyr:
         feat.SetField("tmp", feat.GetField("include"))
-    dp_lyr.DeleteField(field_index)
+        dp_lyr.SetFeature(feat)
+    dp_lyr.DeleteField(include_field_index)
+    dp_lyr.CreateField(inc_def)
+
+    dp_lyr.ResetReading()  # Start reading shpefile at beginning
 
     for feat in dp_lyr:
+        print(feat.GetField("tmp"))
         feat.SetField("INCLUDE", feat.GetField("tmp"))
         streetname = feat.GetField("street")
         try:  # Handle blank streetnames
@@ -244,7 +249,7 @@ elif choice == '2':  # Intermediate shapefile setup
     for fdt_feat in fdt_lyr:
         fdt_feat.SetField("LOCKED", "T")
         fdt_lyr.SetFeature(fdt_feat)
-    fdt_lyr.Destroy()
+    fdt_ds.Destroy()
 
     """
     # Copy to the comsof workspace directory
